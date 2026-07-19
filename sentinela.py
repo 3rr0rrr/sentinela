@@ -42,6 +42,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from modules.utils import banner, log, Colors, SEVERITY_COLORS
+from modules.boot_animation import play_intro
 from modules.wordlists import WordlistManager
 from modules.tool_integration import ToolRunner
 from modules.scope import ScopeEnforcer, ScopeViolation
@@ -281,6 +282,7 @@ def parse_args():
     info.add_argument("--tools",     action="store_true", help="Mostra inventário de ferramentas")
     info.add_argument("--wordlists", action="store_true", help="Mostra inventário de wordlists")
     info.add_argument("--version",   action="store_true")
+    info.add_argument("--no-banner", action="store_true", help="Pula a animação de abertura do banner")
 
     return parser.parse_args()
 
@@ -861,6 +863,8 @@ def main():
         print("sentinela: error: o argumento -t/--target é obrigatório (exceto com --version)")
         sys.exit(2)
 
+    if not args.no_banner:
+        play_intro()
     banner()
 
     config  = build_config(args)
