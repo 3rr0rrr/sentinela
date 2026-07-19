@@ -44,7 +44,7 @@ def calc_score(impact: float, confidence: float,
         SQLi (10, 0.90):           base=(10×0.6)+(9.0×0.4)=9.6  → CRITICAL
         XSS  (6,  0.50):           base=(6×0.6)+(5.0×0.4)=5.6   → MEDIUM
         Hdrs (3,  0.90):           base=(3×0.6)+(9.0×0.4)=5.4   → MEDIUM
-        Auth-req (8, 0.80, ×0.7):  9.2×0.7=6.44                 → HIGH
+        Auth-req (8, 0.80, ×0.7):  base=(8×0.6)+(8.0×0.4)=8.0  ×0.7=5.6  → MEDIUM
         Payment  (10, 0.90, ×1.5): 9.6×1.5=10.0                 → CRITICAL
     """
     # Scale confidence from 0-1 to 0-10 for the formula

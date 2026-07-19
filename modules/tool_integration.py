@@ -127,6 +127,7 @@ TOOL_REGISTRY = {
     "kube-hunter":   ["kube-hunter"],
     "gitleaks":      ["gitleaks"],
     "git-dumper":    ["git-dumper", "git-dumper.py"],
+    "kiterunner":    ["kr", "kiterunner"],
 }
 
 

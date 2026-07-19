@@ -441,7 +441,7 @@ def print_tool_inventory(runner: ToolRunner):
         "Recon / OSINT":       ["nmap","dnsrecon","dnsenum","sublist3r","amass","theHarvester","masscan","fierce","whois","dig",
                                  "subfinder","assetfinder","httpx","waybackurls","gau","katana"],
         "Varredura Web":       ["nikto","whatweb","wafw00f","gobuster","ffuf","dirb","wfuzz","feroxbuster","wpscan","nuclei",
-                                 "arjun","eyewitness","dalfox","wcvs"],
+                                 "arjun","eyewitness","dalfox","wcvs","kiterunner"],
         "Vulnerabilidade":     ["sqlmap","xssstrike","commix","testssl","sslscan","sslyze",
                                  "searchsploit","trivy","osv-scanner","cve-bin-tool","nettacker","zap","gvm-cli",
                                  "interactsh-client"],
@@ -468,6 +468,11 @@ def print_tool_inventory(runner: ToolRunner):
         log(f"    sudo apt install -y {' '.join(apt_pkgs[:8])}", Colors.CYAN)
         log(f"    sudo apt install -y {' '.join(apt_pkgs[8:])}", Colors.CYAN)
         log("    # Navegador headless: pip install playwright && playwright install chromium", Colors.CYAN)
+        if not inv.get("kiterunner"):
+            log("    # Kiterunner (kr) não tem pacote apt — baixar release:", Colors.CYAN)
+            log("    #   curl -sL https://github.com/assetnote/kiterunner/releases/download/v1.0.2/"
+                "kiterunner_1.0.2_linux_amd64.tar.gz | tar xz -C /tmp && sudo mv /tmp/kr /usr/local/bin/",
+                Colors.CYAN)
 
 
 def print_wordlist_inventory():

@@ -12,11 +12,12 @@
 
 *Criado por github.com/3rr0rrr — baseado em [GhostScan](https://github.com/scf13/ghostscan) (MIT License)*
 
+[![CI](https://github.com/3rr0rrr/sentinela/actions/workflows/ci.yml/badge.svg)](https://github.com/3rr0rrr/sentinela/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python)](https://python.org)
 [![Platform](https://img.shields.io/badge/platform-Kali%20Linux-557C94?logo=linux)](https://kali.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Tools](https://img.shields.io/badge/tools-73%20integradas-orange)](docs/sample_report.md)
-[![Plugins](https://img.shields.io/badge/plugins-24%20inclu%C3%ADdos-purple)](#sistema-de-plugins)
+[![Plugins](https://img.shields.io/badge/plugins-25%20inclu%C3%ADdos-purple)](#sistema-de-plugins)
 
 > **[!] Apenas para testes de segurança autorizados.** Uso não autorizado é ilegal.
 
