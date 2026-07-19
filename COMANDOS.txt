@@ -1,0 +1,285 @@
+════════════════════════════════════════════════════════════════════════════
+  SENTINELA — Guia de Comandos: do mais básico ao mais agressivo
+  by github.com/3rr0rrr — baseado em GhostScan (MIT)
+════════════════════════════════════════════════════════════════════════════
+
+Formato geral:
+    sentinela -t ALVO [módulos] [flags]
+
+Se ainda não instalou (sudo bash install.sh), troque "sentinela" por:
+    python3 ~/tools/sentinela/sentinela.py
+
+Os níveis abaixo são progressivos: cada um é mais invasivo que o anterior.
+Ideal seguir na ordem, revisando o resultado de um nível antes de subir pro
+próximo — em vez de já sair rodando o nível 12 contra um alvo real.
+
+[!] MUDANÇA IMPORTANTE nesta versão: os plugins de SSTI, XXE, IDOR/BOLA,
+abuso de lógica de negócio, race condition, cache poisoning e HTTP request
+smuggling agora rodam AUTOMATICAMENTE assim que você sai do --mode stealth
+— não precisam de --sqli/--xss pra serem ativados. Ou seja, --web --mode
+standard sozinho já manda payload de injeção de verdade (mais leve que
+sqlmap/XSS completo, mas ainda é payload de ataque). Ver NÍVEL 3 abaixo.
+
+
+────────────────────────────────────────────────────────────────────────────
+NÍVEL 0 — Informativo (não toca no alvo)
+────────────────────────────────────────────────────────────────────────────
+
+sentinela --version
+sentinela -t ALVO --tools           # ferramentas instaladas (80 integradas)
+sentinela -t ALVO --wordlists       # wordlists disponíveis
+sentinela -t ALVO --workflow        # guia de pentest passo a passo (referência)
+sentinela -t ALVO --help
+
+
+────────────────────────────────────────────────────────────────────────────
+NÍVEL 1 — 100% passivo (nenhum pacote vai direto ao alvo, exceto DNS)
+────────────────────────────────────────────────────────────────────────────
+
+sentinela -t ALVO --recon --mode stealth
+    DNS, WHOIS, crt.sh, waybackurls/gau (URLs históricas), subfinder/
+    assetfinder/Sublist3r/Amass (subdomínio passivo). Rate-limit 2s, sem
+    brute-force, sem probing ativo.
+
+sentinela -t ALVO --recon --mode stealth --shodan-key SUA_KEY
+sentinela -t ALVO --recon --mode stealth --censys-key ID --censys-secret SECRET
+    Mesma coisa + infra já indexada no Shodan/Censys (dado vem do índice
+    de terceiros, nenhum pacote vai direto ao alvo).
+
+
+────────────────────────────────────────────────────────────────────────────
+NÍVEL 2 — Passivo com fingerprint leve
+────────────────────────────────────────────────────────────────────────────
+
+sentinela -t ALVO --web --mode stealth
+    WAF detection, fingerprint de tecnologia, crawl (inclui katana se
+    instalado). Sem dir-brute, sem plugins ativos — tudo isso é pulado
+    no stealth (todo plugin com stealth=False respeita esse corte).
+
+
+────────────────────────────────────────────────────────────────────────────
+NÍVEL 3 — Ativo: probing + injeção leve automática ([!] ler a nota do topo)
+────────────────────────────────────────────────────────────────────────────
+
+sentinela -t ALVO --web --mode standard
+    Soma: directory brute-force (gobuster), probing de paths sensíveis
+    (.env, .git — com reconstrução via git-dumper + Gitleaks na história
+    completa se achar .git exposto), Nikto, SSL/TLS, JS secrets, WPScan,
+    Nuclei, Arjun (parâmetro oculto), EyeWitness (screenshot fallback).
+
+    Plugins que TAMBÉM disparam aqui automaticamente (payload de ataque,
+    não é mais "só leitura"):
+    - SSTI (payload matemático {{7*7}})
+    - XXE (leitura de /etc/hostname, ou confirmação via OOB se disponível)
+    - IDOR/BOLA (variação de ID em endpoint)
+    - Abuso de lógica de negócio/checkout (preço/qtd negativo — não-destrutivo)
+    - Race condition em endpoint de uso único (cupom, cadastro)
+    - Cache poisoning
+    - HTTP Request Smuggling (heurística)
+    - Cloud bucket scanner (S3/Azure/GCS — consulta a nuvem do provedor)
+
+sentinela -t ALVO --vuln --mode standard
+    Auditoria de headers, SSL, correlação de CVE (agora com searchsploit,
+    OSV-Scanner, cve-bin-tool, Nettacker cruzando resultado). Ainda sem
+    SQLi via sqlmap nem XSS via payload completo — isso é o NÍVEL 6.
+    (Rode --web antes/junto — plugins de vuln dependem dos dados da fase
+    web: CORS, JWT, GraphQL, secrets, fuzzer de API/OpenAPI etc.)
+
+sentinela -t ALVO --all
+    Os dois acima + recon, em sequência.
+
+Pra voltar ao comportamento "sem nenhuma injeção", use --mode stealth
+(NÍVEL 1/2) ou espere confirmação manual antes de subir de estágio.
+
+
+────────────────────────────────────────────────────────────────────────────
+NÍVEL 4 — Ativo + evasão de WAF
+────────────────────────────────────────────────────────────────────────────
+
+sentinela -t ALVO --all --waf-bypass
+    Detecta WAF e aplica bypass automaticamente.
+
+sentinela -t ALVO --all --waf-bypass --waf-profile cloudflare
+    Força um perfil específico. Perfis: cloudflare, akamai, aws-waf, f5,
+    imperva, modsecurity, wordfence, sucuri, generic.
+
+
+────────────────────────────────────────────────────────────────────────────
+NÍVEL 5 — Navegador headless (DOM XSS + screenshots)
+────────────────────────────────────────────────────────────────────────────
+
+sentinela -t ALVO --web --browser
+sentinela -t ALVO --web --browser --screenshots
+    Playwright real. Requer: pip install --user --break-system-packages
+    playwright && python3 -m playwright install chromium (no Kali, NÃO
+    use o pacote apt node-playwright — incompatível com Node.js do sistema).
+
+
+────────────────────────────────────────────────────────────────────────────
+NÍVEL 6 — Injeção pesada (SQLi completo / XSS completo / Log4Shell ativo)
+────────────────────────────────────────────────────────────────────────────
+
+sentinela -t ALVO --all --sqli
+sentinela -t ALVO --all --xss
+sentinela -t ALVO --all --sqli --xss --waf-bypass
+    Soma sqlmap completo e/ou probing de XSS com payloads do SecLists +
+    dalfox (se instalado). A partir daqui, escopo e autorização escrita
+    são inequivocamente obrigatórios (mesmo que os plugins do NÍVEL 3 já
+    fizessem injeção mais leve).
+
+sentinela -t ALVO --all --test-log4shell
+    Injeta payload JNDI em headers/parâmetros comuns e confirma via
+    callback OOB real (Interactsh) se o alvo é vulnerável a Log4Shell —
+    RCE confirmado, não só suspeita por keyword.
+
+
+────────────────────────────────────────────────────────────────────────────
+NÍVEL 7 — Furtivo (red-team), mas com probing ativo
+────────────────────────────────────────────────────────────────────────────
+
+sentinela -t ALVO --all --sqli --xss --mode ghost
+    Jitter aleatório (0.8–4.5s) + rotação de User-Agent a cada request.
+    NÃO é passivo — ainda faz todo o probing/injeção que você tiver ligado.
+
+sentinela -t ALVO --all --sqli --xss --mode ghost --proxy-list proxies.txt
+    Mesma coisa + rotação de proxies.
+
+
+────────────────────────────────────────────────────────────────────────────
+NÍVEL 8 — Brute-force de credenciais
+────────────────────────────────────────────────────────────────────────────
+
+[!] SÓ com autorização explícita pra ESSE TIPO de teste no escopo do
+  engajamento.
+
+sentinela -t ALVO --vuln --brute
+sentinela -t ALVO --vuln --brute --password-wordlist senhas.txt --username-wordlist users.txt
+
+
+────────────────────────────────────────────────────────────────────────────
+NÍVEL 9 — Active Directory / Kerberos / Kubernetes
+────────────────────────────────────────────────────────────────────────────
+
+sentinela -t ALVO --vuln --kerberos-user USUARIO --kerberos-pass SENHA --kerberos-domain DOMINIO.LOCAL
+    Kerberoasting (impacket-GetUserSPNs) e AS-REP Roasting (GetNPUsers) —
+    extrai hash TGS pra quebrar OFFLINE depois (john/hashcat), nunca tenta
+    quebrar/adivinhar credencial sozinho. Só roda se porta Kerberos (88)
+    for detectada no recon.
+
+sentinela -t ALVO --vuln --kerberos-user USUARIO --kerberos-pass SENHA --kerberos-domain DOMINIO.LOCAL --plugins
+    Soma coleta BloodHound (mapeamento de caminho de ataque em AD) se
+    bloodhound-python estiver instalado.
+
+sentinela -t ALVO --vuln --mode standard
+    kube-hunter roda automaticamente se a API do Kubernetes for detectada
+    no recon (porta 6443/10250) — não precisa flag própria.
+
+
+────────────────────────────────────────────────────────────────────────────
+NÍVEL 10 — Cloud / Mobile (fora do alvo tradicional, precisa de credencial)
+────────────────────────────────────────────────────────────────────────────
+
+sentinela -t ALVO --vuln --aws-profile meu-perfil
+sentinela -t ALVO --vuln --azure-subscription ID-DA-SUBSCRIPTION
+sentinela -t ALVO --vuln --gcp-project ID-DO-PROJETO
+    Auditoria de configuração cloud completa (ScoutSuite + CloudFox) — IAM,
+    roles, storage. Isso é auditoria da CONTA cloud do cliente, não ataque
+    ao alvo web — precisa de autorização/acesso explícito do lado deles,
+    diferente de escopo de pentest de aplicação tradicional.
+
+sentinela -t ALVO --web --mobile-app /caminho/para/app.apk
+    Análise estática do APK/IPA via mobsfscan (ou MobSF completo se o
+    servidor Docker estiver rodando localmente).
+
+
+────────────────────────────────────────────────────────────────────────────
+NÍVEL 11 — Rede interna (fora do alvo público)
+────────────────────────────────────────────────────────────────────────────
+
+sentinela -t 192.168.1.0/24 --recon --no-ssrf-protect --parallel
+    Escaneia range privado — desliga proteção de SSRF de propósito. Use
+    --parallel só se a máquina aguentar (você normalmente prefere sequencial).
+
+
+────────────────────────────────────────────────────────────────────────────
+NÍVEL 12 — MÁXIMO AGRESSIVO (tudo ligado de uma vez)
+────────────────────────────────────────────────────────────────────────────
+
+sentinela -t ALVO --all --mode aggressive
+    Liga automaticamente: SQLi, XSS, BRUTE-FORCE, paralelismo, threads no
+    máximo (50), wordlists grandes, WAF bypass. É o nível 6 + 8 + paralelo,
+    tudo de uma vez, sem controle fino.
+
+sentinela -t ALVO --all --mode aggressive --browser --screenshots --report all --min-severity info
+    A forma mais completa possível via CLI padrão (não inclui cloud/AD/
+    mobile/phishing — esses continuam exigindo flag própria mesmo no
+    aggressive, de propósito).
+    [!] Só rode com autorização clara pra brute-force E ciente do paralelismo.
+
+
+────────────────────────────────────────────────────────────────────────────
+CATEGORIA À PARTE — Phishing/engenharia social (trava dupla, desligado por padrão)
+────────────────────────────────────────────────────────────────────────────
+
+sentinela -t ALVO --enable-phishing-module
+    Só gera MATERIAL de phishing (via SET, se instalado) pra você revisar
+    e enviar manualmente — nunca envia nada sozinha. Mesmo com a flag,
+    pede confirmação interativa (digitar "SIM") antes de fazer qualquer
+    coisa, porque phishing costuma ser uma linha de autorização SEPARADA
+    no contrato, diferente de teste técnico de aplicação web.
+
+
+────────────────────────────────────────────────────────────────────────────
+APÊNDICE — flags que ajustam qualquer nível acima (não escalam sozinhas)
+────────────────────────────────────────────────────────────────────────────
+
+Escopo:
+    --scope "*.exemplo.com"        --scope-file escopo.txt
+    --strict-scope                 (bloqueia fora do escopo em vez de só avisar)
+
+Wordlists/performance:
+    --wordlist-size small|medium|large
+    --dir-wordlist ARQ  --subdomain-wordlist ARQ
+    --depth 5           --threads N          --rate-limit 1.5
+    --timeout 15        --tool-timeout 300
+    --race-concurrency N   (padrão do teste de race condition, N pequeno)
+
+HTTP/proxy/autenticação:
+    --proxy http://127.0.0.1:8080  (ex: Burp Suite)
+    --tor
+    --cookies '{"session":"abc123"}'
+    --headers '{"X-Custom":"valor"}'
+    --user-agent "MeuUA/1.0"
+
+OOB (Interactsh — usado por XXE cego e Log4Shell ativo):
+    --no-interactsh                 desliga completamente (mais passivo,
+                                     mas perde confirmação de vuln cega)
+    --oob-server URL                usa um collaborator self-hosted em vez
+                                     do serviço público Interactsh
+
+Ações destrutivas (opt-in explícito, desligado por padrão):
+    --confirm-destructive           libera testes que têm efeito colateral
+                                     real (ex: resgatar cupom de verdade
+                                     no teste de reuso, não só simular)
+
+Prova de impacto de XSS confirmado (BeEF, manual — não automatizado):
+    --beef-hook-url URL             se você já tem um BeEF rodando em
+                                     algum lugar, a SENTINELA inclui a
+                                     instrução de hook no finding de XSS
+                                     confirmado (nunca controla o BeEF sozinha)
+
+OpenVAS/GVM (opt-in explícito, nunca instalado/configurado automaticamente):
+    --openvas                       conecta numa instância GVM JÁ RODANDO
+                                     (a SENTINELA não sobe o GVM sozinha)
+
+Saída/relatório:
+    --report markdown|html|pdf|json|both|all
+    --output /caminho/customizado
+    --min-severity critical|high|medium|low|info
+    --resume ./sentinela_results/session_XXXX.json
+    (todo relatório já sai com Sumário Executivo, compliance PCI-DSS/LGPD,
+    CVSS v3.1, hash SHA-256 de custódia, checklist automático de endpoints)
+
+Plugins:
+    --no-plugins    --plugins (padrão: ligado)
+════════════════════════════════════════════════════════════════════════════
